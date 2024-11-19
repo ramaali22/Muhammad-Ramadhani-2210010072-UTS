@@ -24,39 +24,52 @@ import javax.swing.JMenuItem;
  */
 public class KeuanganPribadiForm extends javax.swing.JFrame {
     
+    // Mengatur aksi-aksi untuk menu aplikasi.Menambahkan item menu dan mendefinisikan behavior untuk setiap item.
     private void setupMenuActions() {
-    // Setup menu File
+    // Setup menu File dengan opsi keluar
     JMenuItem menuExit = new JMenuItem("Keluar");
     menuExit.addActionListener(e -> System.exit(0));
     jMenu1.add(menuExit);
 
-    // Setup menu Import
+    // Setup menu Import dengan opsi import dari JSON
     JMenuItem menuImportJson = new JMenuItem("Import dari JSON");
     menuImportJson.addActionListener(e -> importFromJson());
     jMenu2.add(menuImportJson);
 
-    // Setup menu Export
+    // Setup menu Export dengan opsi export ke JSON
     JMenuItem menuExportJson = new JMenuItem("Export ke JSON");
     menuExportJson.addActionListener(e -> exportToJson());
     jMenu3.add(menuExportJson);
     }
     
+    /*
+     * Mengekspor data transaksi ke file JSON.
+     * Method ini akan:
+     * 1. Menampilkan dialog pemilihan file
+     * 2. Mengkonversi data transaksi ke format JSON
+     * 3. Menyimpan file dengan indentasi yang rapi
+     * 
+     * @throws Exception jika terjadi kesalahan dalam proses ekspor
+     */
     private void exportToJson() {
         try {
+            // Inisialisasi file chooser dengan filter JSON
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileFilter(new FileNameExtensionFilter("JSON files (*.json)", "json"));
             fileChooser.setSelectedFile(new File("transaksi_keuangan.json"));
 
             if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
                 File file = fileChooser.getSelectedFile();
+                // Memastikan file berekstensi .json
                 if (!file.getName().toLowerCase().endsWith(".json")) {
                     file = new File(file.getParentFile(), file.getName() + ".json");
                 }
-
+                
+                // Membuat array JSON untuk menyimpan transaksi
                 JSONArray jsonArray = new JSONArray();
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-                // Convert transaksi list to JSON
+                // Mengkonversi setiap transaksi ke objek JSON
                 for (int i = 0; i < model.getSize(); i++) {
                     Transaksi t = model.getTransaksi(i);
                     JSONObject jsonTransaksi = new JSONObject();
@@ -67,17 +80,19 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
                     jsonArray.put(jsonTransaksi);
                 }
 
-                // Write to file
+                // Menulis ke file dengan format yang rapi
                 try (FileWriter writer = new FileWriter(file)) {
                     writer.write(jsonArray.toString(2)); // indentasi 2 spasi
                 }
 
+                // Menampilkan pesan sukses
                 JOptionPane.showMessageDialog(this,
                     "Data berhasil diekspor ke " + file.getName(),
                     "Ekspor Berhasil",
                     JOptionPane.INFORMATION_MESSAGE);
             }
         } catch (Exception ex) {
+            // Menampilkan pesan error jika terjadi kesalahan
             JOptionPane.showMessageDialog(this,
                 "Gagal mengekspor data: " + ex.getMessage(),
                 "Error",
@@ -85,15 +100,23 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
         }
     }
 
+    
+    //Mengimpor data transaksi dari file JSON.
+    //Method ini akan:
+    //1. Menampilkan dialog pemilihan file
+    //2. Membaca dan memparse file JSON
+    //3. Menambahkan atau menggabungkan data yang diimpor
+    //@throws Exception jika terjadi kesalahan dalam proses impor
     private void importFromJson() {
         try {
+            // Inisialisasi file chooser dengan filter JSON
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileFilter(new FileNameExtensionFilter("JSON files (*.json)", "json"));
 
             if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
                 File file = fileChooser.getSelectedFile();
 
-                // Read file content
+                // Membaca konten file
                 StringBuilder content = new StringBuilder();
                 try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                     String line;
@@ -102,7 +125,7 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
                     }
                 }
 
-                // Parse JSON
+                // Parse JSON dan format tanggal
                 JSONArray jsonArray = new JSONArray(content.toString());
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -120,7 +143,7 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
                     }
                 }
 
-                // Import data
+                // Import setiap transaksi dari JSON
                 for (int i = 0; i < jsonArray.length(); i++) {
                     JSONObject obj = jsonArray.getJSONObject(i);
 
@@ -135,13 +158,15 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
                 }
 
                 updateSaldoLabel();
-
+                
+                // Menampilkan pesan sukses
                 JOptionPane.showMessageDialog(this,
                     "Data berhasil diimpor dari " + file.getName(),
                     "Import Berhasil",
                     JOptionPane.INFORMATION_MESSAGE);
             }
         } catch (Exception ex) {
+            // Menampilkan pesan error jika terjadi kesalahan
             JOptionPane.showMessageDialog(this,
                 "Gagal mengimpor data: " + ex.getMessage(),
                 "Error",
@@ -149,12 +174,24 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
         }
     }
     
+   
+    //Kelas internal untuk merepresentasikan sebuah transaksi keuangan.
+    //Menyimpan informasi detail tentang setiap transaksi seperti tanggal, 
+    //keterangan, jumlah, dan jenis transaksi.
     private class Transaksi {
-        private Date tanggal;
-        private String keterangan;
-        private double jumlah;
-        private String jenis;
+        private Date tanggal;       // Tanggal transaksi
+        private String keterangan;  // Deskripsi transaksi
+        private double jumlah;      // Nilai transaksi
+        private String jenis;       // Jenis transaksi (Pemasukan/Pengeluaran)
         
+        /*
+         * Constructor untuk membuat objek Transaksi baru
+         * 
+         * @param tanggal Tanggal transaksi
+         * @param keterangan Deskripsi transaksi
+         * @param jumlah Nilai transaksi
+         * @param jenis Jenis transaksi (Pemasukan/Pengeluaran)
+         */
         public Transaksi(Date tanggal, String keterangan, double jumlah, String jenis) {
             this.tanggal = tanggal;
             this.keterangan = keterangan;
@@ -162,6 +199,7 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
             this.jenis = jenis;
         }
         
+        // Getter dan Setter untuk setiap field
         public Date getTanggal() { return tanggal; }
         public String getKeterangan() { return keterangan; }
         public double getJumlah() { return jumlah; }
@@ -172,6 +210,10 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
         public void setJumlah(double jumlah) { this.jumlah = jumlah; }
         public void setJenis(String jenis) { this.jenis = jenis; }
         
+        /*
+         * Override toString untuk format tampilan transaksi yang rapi
+         * Format: YYYY-MM-DD - Keterangan - Rp XXX.XX (Jenis)
+         */
         @Override
         public String toString() {
             return String.format("%tF - %s - Rp %.2f (%s)", 
@@ -180,18 +222,31 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
 
     }
     
-    // Inner class untuk model transaksi
+    /*
+     * Kelas internal untuk mengelola model data transaksi.
+     * Mengextend DefaultListModel untuk menangani tampilan list
+     * dan menambahkan fungsi perhitungan saldo.
+     */
     private class TransaksiModel extends DefaultListModel<String> {
-        private ArrayList<Transaksi> transaksiList;
-        private double saldo;
+        private ArrayList<Transaksi> transaksiList;  // List untuk menyimpan transaksi
+        private double saldo;                        // Saldo current
         
+        /*
+         * Constructor untuk membuat model transaksi baru
+         */
         public TransaksiModel() {
             transaksiList = new ArrayList<>();
             saldo = 0.0;
         }
         
+        /*
+         * Menambahkan transaksi baru dan mengupdate saldo
+         * 
+         * @param t Transaksi yang akan ditambahkan
+         */
         public void tambahTransaksi(Transaksi t) {
             transaksiList.add(t);
+            // Update saldo berdasarkan jenis transaksi
             if (t.getJenis().equals("Pemasukan")) {
                 saldo += t.getJumlah();
             } else {
@@ -200,9 +255,15 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
             updateListModel();
         }
         
+        /*
+         * Menghapus transaksi dan mengupdate saldo
+         * 
+         * @param index Index transaksi yang akan dihapus
+         */
         public void hapusTransaksi(int index) {
             if (index >= 0 && index < transaksiList.size()) {
                 Transaksi t = transaksiList.get(index);
+                // Update saldo berdasarkan jenis transaksi yang dihapus
                 if (t.getJenis().equals("Pemasukan")) {
                     saldo -= t.getJumlah();
                 } else {
@@ -213,6 +274,12 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
             }
         }
         
+        /*
+         * Mengupdate transaksi yang ada dengan data baru
+         * 
+         * @param index Index transaksi yang akan diupdate
+         * @param newTransaksi Data transaksi baru
+         */
         public void updateTransaksi(int index, Transaksi newTransaksi) {
             if (index >= 0 && index < transaksiList.size()) {
                 Transaksi oldTransaksi = transaksiList.get(index);
@@ -236,6 +303,9 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
             }
         }
         
+        /*
+         * Mengupdate tampilan list dengan data terbaru
+         */
         private void updateListModel() {
             this.clear();
             for (Transaksi t : transaksiList) {
@@ -243,20 +313,32 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
             }
         }
         
+        /*
+         * Mendapatkan saldo current
+         * 
+         * @return Nilai saldo terkini
+         */
         public double getSaldo() {
             return saldo;
         }
         
+        /*
+         * Mendapatkan objek Transaksi berdasarkan index
+         * 
+         * @param index Index transaksi yang diinginkan
+         * @return Objek Transaksi pada index tersebut
+         */
         public Transaksi getTransaksi(int index) {
             return transaksiList.get(index);
         }
     }
     
-    private TransaksiModel model;
-    private NumberFormat currencyFormat;
+    private TransaksiModel model;                // Model untuk menyimpan data transaksi
+    private NumberFormat currencyFormat;         // Format mata uang
     
-    /**
-     * Creates new form KeuanganPribadiForm
+    /*
+     * Constructor untuk form utama aplikasi.
+     * Menginisialisasi komponen GUI dan setup awal.
      */
     public KeuanganPribadiForm() {
         initComponents();
@@ -271,6 +353,7 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
         // Menambahkan action listeners
         addActionListeners();
 
+        // Setup menu bar
         JMenuBar menuBar = new JMenuBar();
         jMenu1 = new JMenu("File");
         jMenu2 = new JMenu("Import");
@@ -288,6 +371,9 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
         setLocationRelativeTo(null);
     }
     
+    /*
+     * Menambahkan action listeners untuk komponen GUI
+     */
      private void addActionListeners() {
         // Tambahkan list selection listener
         listTransaksi.addListSelectionListener(e -> {
@@ -309,24 +395,28 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
     }
      
     private void updateSaldoBasedOnSelection(Transaksi transaksi) {
+        // Metode untuk memperbarui saldo berdasarkan jenis transaksi
         double currentSaldo = model.getSaldo();
         if (transaksi.getJenis().equals("Pengeluaran")) {
+            // Jika transaksi adalah pengeluaran, kurangi saldo
             currentSaldo -= transaksi.getJumlah();
         } else {
+            // Jika transaksi adalah pemasukan, tambah saldo
             currentSaldo += transaksi.getJumlah();
         }
+        // Perbarui label saldo dengan format mata uang
         lblSaldo.setText("Saldo: " + currencyFormat.format(currentSaldo));
     }
     
     private void tambahData() {
         try {
-            // Validasi form
+            // Validasi kelengkapan dan kebenaran input form
             if (jTanggal.getDate() == null || 
                 txtKeterangan.getText().trim().isEmpty() ||
                 txtJumlah.getText().trim().isEmpty() ||
                 cmboxJenis.getSelectedIndex() == -1) {
 
-                // Tampilkan pesan error yang sesuai
+                // Tampilkan pesan error untuk setiap input yang tidak valid
                 if (jTanggal.getDate() == null) {
                     JOptionPane.showMessageDialog(this,
                         "Tanggal harus diisi!",
@@ -357,7 +447,7 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
                 return;
             }
 
-            // Validasi format jumlah
+            // Validasi format jumlah (konversi dan cek nilai positif)
             String jumlahStr = txtJumlah.getText().trim().replace(",", "");
             double jumlah = Double.parseDouble(jumlahStr);
 
@@ -370,7 +460,7 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
                 return;
             }
 
-            // Buat dan tambah transaksi baru
+            // Buat objek transaksi baru dengan data dari form
             Transaksi transaksi = new Transaksi(
                 jTanggal.getDate(),
                 txtKeterangan.getText().trim(),
@@ -378,8 +468,13 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
                 (String) cmboxJenis.getSelectedItem()
             );
 
+            // Tambahkan transaksi ke model
             model.tambahTransaksi(transaksi);
+            
+            // Perbarui label saldo
             updateSaldoLabel();
+            
+            // Bersihkan form setelah menambah data
             clearForm();
 
             // Tampilkan pesan sukses
@@ -389,12 +484,14 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
                 JOptionPane.INFORMATION_MESSAGE);
 
         } catch (NumberFormatException ex) {
+            // Tangani error jika format jumlah tidak valid
             JOptionPane.showMessageDialog(this,
                 "Format jumlah tidak valid! Masukkan angka saja.",
                 "Error",
                 JOptionPane.ERROR_MESSAGE);
             txtJumlah.requestFocus();
         } catch (Exception ex) {
+            // Tangani error umum lainnya
             JOptionPane.showMessageDialog(this,
                 "Terjadi kesalahan: " + ex.getMessage(),
                 "Error",
@@ -403,18 +500,23 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
     }
     
     private void hapusData() {
+        // Dapatkan indeks transaksi yang dipilih
         int selectedIndex = listTransaksi.getSelectedIndex();
         if (selectedIndex != -1) {
+            // Tampilkan konfirmasi penghapusan
             int confirm = JOptionPane.showConfirmDialog(this,
                 "Apakah Anda yakin ingin menghapus transaksi ini?",
                 "Konfirmasi Hapus",
                 JOptionPane.YES_NO_OPTION);
                 
             if (confirm == JOptionPane.YES_OPTION) {
+                // Hapus transaksi dari model jika dikonfirmasi
                 model.hapusTransaksi(selectedIndex);
+                // Perbarui label saldo
                 updateSaldoLabel();
             }
         } else {
+            // Tampilkan pesan error jika tidak ada transaksi yang dipilih
             JOptionPane.showMessageDialog(this,
                 "Pilih transaksi yang akan dihapus!",
                 "Error",
@@ -423,25 +525,28 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
     }
     
     private void ubahData() {
+        // Dapatkan indeks transaksi yang dipilih
         int selectedIndex = listTransaksi.getSelectedIndex();
         if (selectedIndex != -1) {
+            // Ambil data transaksi yang dipilih
             Transaksi selected = model.getTransaksi(selectedIndex);
             
-            // Isi form dengan data yang dipilih
+            // Isi form dengan data transaksi yang dipilih
             jTanggal.setDate(selected.getTanggal());
             txtKeterangan.setText(selected.getKeterangan());
             txtJumlah.setText(String.valueOf(selected.getJumlah()));
             cmboxJenis.setSelectedItem(selected.getJenis());
             
-            // Hapus data lama
+            // Hapus data lama dari model
             model.hapusTransaksi(selectedIndex);
             
-            // User dapat mengedit data di form dan mengklik "Tambah Data"
+            // Beri petunjuk kepada pengguna untuk menyimpan perubahan
             JOptionPane.showMessageDialog(this,
                 "Edit data dalam form dan klik 'Tambah Data' untuk menyimpan perubahan",
                 "Informasi",
                 JOptionPane.INFORMATION_MESSAGE);
         } else {
+            // Tampilkan pesan error jika tidak ada transaksi yang dipilih
             JOptionPane.showMessageDialog(this,
                 "Pilih transaksi yang akan diubah!",
                 "Error",
@@ -450,6 +555,7 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
     }
     
     private void clearForm() {
+        // Reset semua komponen form ke kondisi awal
         jTanggal.setDate(null);
         txtKeterangan.setText("");
         txtJumlah.setText("");
@@ -457,6 +563,7 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
     }
     
     private void updateSaldoLabel() {
+        // Perbarui label saldo dengan format mata uang
         lblSaldo.setText("Saldo: " + currencyFormat.format(model.getSaldo()));
     }
 
@@ -594,7 +701,7 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
 
         getContentPane().add(jPanel1, java.awt.BorderLayout.NORTH);
 
-        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Daftar Transaksi"));
+        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Riwayat Keuangan"));
         jPanel2.setLayout(new java.awt.BorderLayout());
 
         jScrollPane1.setMinimumSize(new java.awt.Dimension(50, 50));
@@ -606,6 +713,7 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
         jPanel2.add(jScrollPane1, java.awt.BorderLayout.CENTER);
 
         getContentPane().add(jPanel2, java.awt.BorderLayout.CENTER);
+        jPanel2.getAccessibleContext().setAccessibleName("Riwayat Keuangan");
 
         jPanel3.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
 
@@ -653,18 +761,25 @@ public class KeuanganPribadiForm extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnTambahDataActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTambahDataActionPerformed
+        // Metode untuk menangani event klik tombol "Tambah Data"
+        // Memproses penambahan riwayat keuangan baru ke dalam daftar
         tambahData();
     }//GEN-LAST:event_btnTambahDataActionPerformed
 
     private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusActionPerformed
+        // Metode untuk menangani event klik tombol "Hapus"
+        // Menghapus riwayat keuangan yang dipilih dari daftar
         hapusData();
     }//GEN-LAST:event_btnHapusActionPerformed
 
     private void btnUbahActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUbahActionPerformed
+        // Metode untuk menangani event klik tombol "Ubah"
+        // Mempersiapkan riwayat keuangan yang dipilih untuk diedit
         ubahData();
     }//GEN-LAST:event_btnUbahActionPerformed
 
     private void txtJumlahKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtJumlahKeyTyped
+        // Validasi input hanya memperbolehkan karakter angka
         char c = evt.getKeyChar();
         if (!Character.isDigit(c)) {
             evt.consume();  // Batalkan karakter jika bukan angka
